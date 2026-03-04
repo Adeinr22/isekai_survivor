@@ -8,15 +8,27 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(join('images', 'player', 'down', '0.png')).convert_alpha()
         self.rect = self.image.get_frect(center = pos)
         self.hitbox_rect = self.rect.inflate(-60, -90)
-    
         # movement 
         self.direction = pygame.Vector2()
         self.speed = 500
         self.collision_sprites = collision_sprites
+        # health
+        self.max_health = 100
+        self.health = self.max_health
+        self.invincible = False
+        self.hurt_time = 0
+        self.hurt_cooldown = 500
+        # experience & level
+        self.level = 1
+        self.xp = 0
+        self.xp_to_next_level = 100
+        self.base_damage = 10
+        self.damage = self.base_damage
+        self.fire_rate_modifier = 1.0 
+        self.speed_modifier = 1.0
 
     def load_images(self):
         self.frames = {'left': [], 'right': [], 'up': [], 'down': []}
-
         for state in self.frames.keys():
             for folder_path, sub_folders, file_names in walk(join('images', 'player', state)):
                 if file_names:
@@ -32,9 +44,10 @@ class Player(pygame.sprite.Sprite):
         self.direction = self.direction.normalize() if self.direction else self.direction
 
     def move(self, dt):
-        self.hitbox_rect.x += self.direction.x * self.speed * dt
+        speed = self.speed * self.speed_modifier
+        self.hitbox_rect.x += self.direction.x * speed * dt
         self.collision('horizontal')
-        self.hitbox_rect.y += self.direction.y * self.speed * dt
+        self.hitbox_rect.y += self.direction.y * speed * dt
         self.collision('vertical')
         self.rect.center = self.hitbox_rect.center
 
@@ -54,12 +67,52 @@ class Player(pygame.sprite.Sprite):
             self.state = 'right' if self.direction.x > 0 else 'left'
         if self.direction.y != 0:
             self.state = 'down' if self.direction.y > 0 else 'up'
-
         # animate
         self.frame_index = self.frame_index + 5 * dt if self.direction else 0
         self.image = self.frames[self.state][int(self.frame_index) % len(self.frames[self.state])]
+
+    def take_damage(self, amount):
+        if not self.invincible:
+            self.health -= amount
+            self.invincible = True
+            self.hurt_time = pygame.time.get_ticks()
+            if self.health <= 0:
+                self.health = 0
+                return True  # dead
+        return False
+    
+    def check_invincibility(self):
+        if self.invincible:
+            now = pygame.time.get_ticks()
+            if now - self.hurt_time >= self.hurt_cooldown:
+                self.invincible = False
+
+    def add_xp(self, amount):
+        self.xp += amount
+        if self.xp >= self.xp_to_next_level:
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.xp -= self.xp_to_next_level
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5) 
+        self.upgrade_pending = True  
+
+    def apply_upgrade(self, choice):
+        # choice: 'damage', 'health', 'fire_rate', 'speed'
+        if choice == 'damage':
+            self.damage = int(self.damage * 1.2)
+        elif choice == 'health':
+            self.max_health = int(self.max_health * 1.2)
+            self.health = self.max_health  # full heal on health upgrade
+        elif choice == 'fire_rate':
+            self.fire_rate_modifier *= 0.8  # faster shooting
+        elif choice == 'speed':
+            self.speed_modifier *= 1.2
+        self.upgrade_pending = False
 
     def update(self, dt):
         self.input()
         self.move(dt)
         self.animate(dt)
+        self.check_invincibility()
