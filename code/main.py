@@ -115,7 +115,6 @@ class Game:
         for enemy in pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
             if not enemy.dead:
                 died = self.player.take_damage(10)  
-                enemy.die()  
                 if died:
                     self.state = 'game_over'
                     self.update_highscore()

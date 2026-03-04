@@ -20,7 +20,7 @@ class Player(pygame.sprite.Sprite):
         self.health = self.max_health
         self.invincible = False
         self.hurt_time = 0
-        self.hurt_cooldown = 10  
+        self.hurt_cooldown = 500  
 
         # experience & level
         self.level = 1
@@ -28,7 +28,7 @@ class Player(pygame.sprite.Sprite):
         self.xp_to_next_level = 100  
         self.base_damage = 20
         self.damage = self.base_damage
-        self.fire_rate_modifier = 4.0  
+        self.fire_rate_modifier = 3.0
         self.speed_modifier = 1.0
 
     def load_images(self):
@@ -102,20 +102,20 @@ class Player(pygame.sprite.Sprite):
     def level_up(self):
         self.level += 1
         self.xp -= self.xp_to_next_level
-        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)  # scale
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)  
         self.health = self.max_health   
         self.upgrade_pending = True  
 
     def apply_upgrade(self, choice):
-        if choice == 'damage':
-            self.damage = int(self.damage * 1.2)
-        elif choice == 'health':
-            self.max_health = int(self.max_health * 1.2)
+        if choice == 'Damage':
+            self.damage = int(self.damage * 1.5)
+        elif choice == 'Health':
+            self.max_health = int(self.max_health * 2.0)
             self.health = self.max_health  
-        elif choice == 'fire_rate':
-            self.fire_rate_modifier *= 0.8  
-        elif choice == 'speed':
-            self.speed_modifier *= 1.2
+        elif choice == 'Fire Rate':
+            self.fire_rate_modifier *= 0.8
+        elif choice == 'Speed':
+            self.speed_modifier *= 1.5
         self.upgrade_pending = False
 
     def update(self, dt):

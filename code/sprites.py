@@ -17,7 +17,7 @@ class CollisionSprite(pygame.sprite.Sprite):
 class Gun(pygame.sprite.Sprite):
     def __init__(self, player, groups):
         self.player = player
-        self.distance = 100
+        self.distance = 50
         self.player_direction = pygame.Vector2(0, 1)
         super().__init__(groups)
         self.gun_surf = pygame.image.load(join('images', 'gun', 'gun.png')).convert_alpha()
