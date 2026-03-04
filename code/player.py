@@ -1,4 +1,4 @@
-from settings import * 
+from settings import *
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites):
@@ -6,25 +6,29 @@ class Player(pygame.sprite.Sprite):
         self.load_images()
         self.state, self.frame_index = 'right', 0
         self.image = pygame.image.load(join('images', 'player', 'down', '0.png')).convert_alpha()
-        self.rect = self.image.get_frect(center = pos)
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_frect(center=pos)
         self.hitbox_rect = self.rect.inflate(-60, -90)
-        # movement 
+
+        # movement
         self.direction = pygame.Vector2()
         self.speed = 500
         self.collision_sprites = collision_sprites
+
         # health
         self.max_health = 100
         self.health = self.max_health
         self.invincible = False
         self.hurt_time = 0
-        self.hurt_cooldown = 500
+        self.hurt_cooldown = 10  
+
         # experience & level
         self.level = 1
         self.xp = 0
-        self.xp_to_next_level = 100
-        self.base_damage = 10
+        self.xp_to_next_level = 100  
+        self.base_damage = 20
         self.damage = self.base_damage
-        self.fire_rate_modifier = 1.0 
+        self.fire_rate_modifier = 4.0  
         self.speed_modifier = 1.0
 
     def load_images(self):
@@ -32,7 +36,7 @@ class Player(pygame.sprite.Sprite):
         for state in self.frames.keys():
             for folder_path, sub_folders, file_names in walk(join('images', 'player', state)):
                 if file_names:
-                    for file_name in sorted(file_names, key= lambda name: int(name.split('.')[0])):
+                    for file_name in sorted(file_names, key=lambda name: int(name.split('.')[0])):
                         full_path = join(folder_path, file_name)
                         surf = pygame.image.load(full_path).convert_alpha()
                         self.frames[state].append(surf)
@@ -55,21 +59,24 @@ class Player(pygame.sprite.Sprite):
         for sprite in self.collision_sprites:
             if sprite.rect.colliderect(self.hitbox_rect):
                 if direction == 'horizontal':
-                    if self.direction.x > 0: self.hitbox_rect.right = sprite.rect.left
-                    if self.direction.x < 0: self.hitbox_rect.left = sprite.rect.right
+                    if self.direction.x > 0:
+                        self.hitbox_rect.right = sprite.rect.left
+                    if self.direction.x < 0:
+                        self.hitbox_rect.left = sprite.rect.right
                 else:
-                    if self.direction.y < 0: self.hitbox_rect.top = sprite.rect.bottom
-                    if self.direction.y > 0: self.hitbox_rect.bottom = sprite.rect.top
+                    if self.direction.y < 0:
+                        self.hitbox_rect.top = sprite.rect.bottom
+                    if self.direction.y > 0:
+                        self.hitbox_rect.bottom = sprite.rect.top
 
     def animate(self, dt):
-        # get state 
         if self.direction.x != 0:
             self.state = 'right' if self.direction.x > 0 else 'left'
         if self.direction.y != 0:
             self.state = 'down' if self.direction.y > 0 else 'up'
-        # animate
         self.frame_index = self.frame_index + 5 * dt if self.direction else 0
         self.image = self.frames[self.state][int(self.frame_index) % len(self.frames[self.state])]
+        self.mask = pygame.mask.from_surface(self.image)    
 
     def take_damage(self, amount):
         if not self.invincible:
@@ -78,9 +85,9 @@ class Player(pygame.sprite.Sprite):
             self.hurt_time = pygame.time.get_ticks()
             if self.health <= 0:
                 self.health = 0
-                return True  # dead
+                return True 
         return False
-    
+
     def check_invincibility(self):
         if self.invincible:
             now = pygame.time.get_ticks()
@@ -95,18 +102,18 @@ class Player(pygame.sprite.Sprite):
     def level_up(self):
         self.level += 1
         self.xp -= self.xp_to_next_level
-        self.xp_to_next_level = int(self.xp_to_next_level * 1.5) 
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)  # scale
+        self.health = self.max_health   
         self.upgrade_pending = True  
 
     def apply_upgrade(self, choice):
-        # choice: 'damage', 'health', 'fire_rate', 'speed'
         if choice == 'damage':
             self.damage = int(self.damage * 1.2)
         elif choice == 'health':
             self.max_health = int(self.max_health * 1.2)
-            self.health = self.max_health  # full heal on health upgrade
+            self.health = self.max_health  
         elif choice == 'fire_rate':
-            self.fire_rate_modifier *= 0.8  # faster shooting
+            self.fire_rate_modifier *= 0.8  
         elif choice == 'speed':
             self.speed_modifier *= 1.2
         self.upgrade_pending = False
